@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>相機開啟示範</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, #f4f4f4 0%, #eaeaea 100%);
+    }
+
+    main {
+      box-sizing: border-box;
+      width: min(90vw, 480px);
+      padding: 24px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+      backdrop-filter: blur(8px);
+    }
+
+    h1 {
+      margin: 0 0 16px;
+      text-align: center;
+      font-size: 1.75rem;
+    }
+
+    p {
+      margin: 0 0 24px;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      padding: 14px 20px;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      background: #4f46e5;
+      color: #fff;
+      font-weight: 600;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    button:not(:disabled):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+    }
+
+    video {
+      display: none;
+      width: 100%;
+      margin-top: 24px;
+      border-radius: 12px;
+      background: #000;
+    }
+
+    video.active {
+      display: block;
+    }
+
+    .message {
+      margin-top: 16px;
+      text-align: center;
+      color: #dc2626;
+      min-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>開啟相機預覽</h1>
+    <p>按下下面的按鈕，瀏覽器會向你要求開啟相機的權限。</p>
+    <button id="openCamera">開啟相機</button>
+    <video id="preview" playsinline autoplay muted></video>
+    <div class="message" id="message"></div>
+  </main>
+
+  <script>
+    const openCameraButton = document.getElementById('openCamera');
+    const preview = document.getElementById('preview');
+    const message = document.getElementById('message');
+
+    async function getCameraStream() {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('目前的瀏覽器不支援相機存取 (getUserMedia)。');
+      }
+
+      // 要求使用者授權使用前鏡頭，若沒有則回退為預設相機
+      const constraints = {
+        video: {
+          facingMode: { ideal: 'environment' }
+        },
+        audio: false
+      };
+
+      return navigator.mediaDevices.getUserMedia(constraints);
+    }
+
+    async function handleOpenCamera() {
+      openCameraButton.disabled = true;
+      message.textContent = '';
+
+      try {
+        const stream = await getCameraStream();
+        preview.srcObject = stream;
+        preview.classList.add('active');
+        message.textContent = '相機已開啟。如需停止，請關閉此分頁或瀏覽器提供的相機控制。';
+        // 允許再次點擊以重新要求權限或切換裝置
+        openCameraButton.textContent = '重新嘗試開啟相機';
+      } catch (error) {
+        console.error(error);
+        message.textContent = error.message || '無法存取相機，請確認權限設定或使用支援 HTTPS 的環境。';
+      } finally {
+        openCameraButton.disabled = false;
+      }
+    }
+
+    openCameraButton.addEventListener('click', handleOpenCamera);
+
+    // 對於部分 iOS 裝置，必須在使用者互動後才啟用播放
+    preview.addEventListener('loadedmetadata', () => {
+      preview.play().catch(() => {
+        // play() 可能被拒絕，使用者可以再點一次按鈕
+      });
+    });
+  </script>
+</body>
+</html>
