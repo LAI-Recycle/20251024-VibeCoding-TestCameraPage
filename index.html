@@ -69,6 +69,12 @@
       background: #dc2626;
     }
 
+    button.outline {
+      background: transparent;
+      border: 2px solid #4f46e5;
+      color: #4f46e5;
+    }
+
     button:disabled {
       opacity: 0.6;
       cursor: not-allowed;
@@ -87,6 +93,10 @@
 
     button.danger:not(:disabled):hover {
       box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+    }
+
+    button.outline:not(:disabled):hover {
+      box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
     }
 
     video {
@@ -115,35 +125,138 @@
     .message.error {
       color: #dc2626;
     }
+
+    .gallery {
+      margin-top: 32px;
+      transition: opacity 0.2s ease;
+    }
+
+    .gallery[data-empty="true"] .gallery-grid {
+      display: none;
+    }
+
+    .gallery[data-empty="true"] .gallery-empty {
+      display: block;
+    }
+
+    .gallery header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .gallery-title {
+      margin: 0;
+      font-size: 1.25rem;
+      color: #111;
+    }
+
+    .gallery-help {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #475569;
+      text-align: right;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 12px;
+    }
+
+    .snapshot {
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
+      background: #0f172a;
+      position: relative;
+    }
+
+    .snapshot img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .snapshot time {
+      position: absolute;
+      inset: auto 0 0 0;
+      padding: 4px 6px;
+      font-size: 0.75rem;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.8);
+      background: rgba(30, 41, 59, 0.7);
+    }
+
+    .snapshot a {
+      position: absolute;
+      inset: 0;
+      display: block;
+    }
+
+    .gallery-empty {
+      display: none;
+      margin: 12px 0 0;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
   </style>
 </head>
 <body>
   <main>
     <h1>開啟相機預覽</h1>
     <p>按下下面的按鈕，瀏覽器會向你要求開啟相機的權限。</p>
-    <video id="preview" playsinline autoplay muted></video>
-    <div class="message" id="message"></div>
     <div class="controls">
       <button id="startCamera">開啟相機</button>
+      <button id="takePhoto" class="outline" disabled>拍照</button>
       <button id="switchCamera" class="secondary" disabled>切換至前鏡頭</button>
       <button id="stopCamera" class="danger" disabled>關閉相機</button>
     </div>
-    
+    <video id="preview" playsinline autoplay muted></video>
+    <div class="message" id="message"></div>
+    <section class="gallery" aria-live="polite" data-empty="true">
+      <header>
+        <h2 class="gallery-title">拍攝紀錄</h2>
+        <p class="gallery-help">拍照後的縮圖會暫存於此，可點擊下載</p>
+      </header>
+      <p class="gallery-empty" id="galleryEmpty">尚未拍照。</p>
+      <div class="gallery-grid" id="snapshots"></div>
+    </section>
   </main>
 
   <script>
     const startCameraButton = document.getElementById('startCamera');
+    const takePhotoButton = document.getElementById('takePhoto');
     const switchCameraButton = document.getElementById('switchCamera');
     const stopCameraButton = document.getElementById('stopCamera');
     const preview = document.getElementById('preview');
     const message = document.getElementById('message');
+    const snapshots = document.getElementById('snapshots');
+    const gallerySection = document.querySelector('.gallery');
+    const galleryEmpty = document.getElementById('galleryEmpty');
 
     let currentStream = null;
     let currentFacingMode = 'environment';
+    const maxSnapshots = 12;
+
+    updateGalleryState();
 
     function setMessage(text, type = 'info') {
       message.textContent = text;
       message.className = type === 'info' ? 'message' : `message ${type}`;
+    }
+
+    function updateGalleryState() {
+      const hasSnapshots = snapshots.children.length > 0;
+      gallerySection.dataset.empty = hasSnapshots ? 'false' : 'true';
+      if (hasSnapshots) {
+        galleryEmpty.setAttribute('hidden', 'hidden');
+      } else {
+        galleryEmpty.removeAttribute('hidden');
+      }
     }
 
     function stopCurrentStream() {
@@ -204,6 +317,7 @@
       startCameraButton.disabled = true;
       switchCameraButton.disabled = true;
       stopCameraButton.disabled = true;
+      takePhotoButton.disabled = true;
       setMessage(statusText);
 
       try {
@@ -230,6 +344,7 @@
 
         stopCameraButton.disabled = false;
         switchCameraButton.disabled = false;
+        takePhotoButton.disabled = false;
         return true;
       } catch (error) {
         console.error(error);
@@ -252,6 +367,7 @@
       setMessage('相機已關閉。');
       stopCameraButton.disabled = true;
       switchCameraButton.disabled = true;
+      takePhotoButton.disabled = true;
       updateSwitchButtonLabel();
     }
 
@@ -284,7 +400,78 @@
       stopCamera();
     }
 
+    function createSnapshotElement(dataUrl) {
+      const figure = document.createElement('figure');
+      figure.className = 'snapshot';
+
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `snapshot-${Date.now()}.jpg`;
+      link.title = '點擊下載圖片';
+
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      img.alt = '拍攝快照';
+
+      const timeLabel = document.createElement('time');
+      const now = new Date();
+      timeLabel.dateTime = now.toISOString();
+      timeLabel.textContent = new Intl.DateTimeFormat('zh-Hant', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }).format(now);
+
+      link.appendChild(img);
+      figure.appendChild(link);
+      figure.appendChild(timeLabel);
+
+      return figure;
+    }
+
+    function addSnapshot(dataUrl) {
+      const element = createSnapshotElement(dataUrl);
+      const firstChild = snapshots.firstChild;
+      if (firstChild) {
+        snapshots.insertBefore(element, firstChild);
+      } else {
+        snapshots.appendChild(element);
+      }
+
+      while (snapshots.children.length > maxSnapshots) {
+        snapshots.removeChild(snapshots.lastElementChild);
+      }
+
+      updateGalleryState();
+    }
+
+    function handleTakePhoto() {
+      if (!currentStream) {
+        setMessage('請先開啟相機後再拍照。', 'error');
+        return;
+      }
+
+      const videoWidth = preview.videoWidth;
+      const videoHeight = preview.videoHeight;
+
+      if (!videoWidth || !videoHeight) {
+        setMessage('相機尚未準備完成，請稍候再拍照。', 'error');
+        return;
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = videoWidth;
+      canvas.height = videoHeight;
+      const context = canvas.getContext('2d');
+      context.drawImage(preview, 0, 0, canvas.width, canvas.height);
+
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+      addSnapshot(dataUrl);
+      setMessage('已拍照，縮圖已顯示於下方，可點擊下載。', 'success');
+    }
+
     startCameraButton.addEventListener('click', handleStart);
+    takePhotoButton.addEventListener('click', handleTakePhoto);
     switchCameraButton.addEventListener('click', handleSwitchCamera);
     stopCameraButton.addEventListener('click', handleStop);
 
