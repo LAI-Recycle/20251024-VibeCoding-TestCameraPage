@@ -32,36 +32,61 @@
       margin: 0 0 16px;
       text-align: center;
       font-size: 1.75rem;
+      color: #111;
     }
 
     p {
       margin: 0 0 24px;
       text-align: center;
       line-height: 1.6;
+      color: #111;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
 
     button {
-      display: block;
       width: 100%;
       padding: 14px 20px;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       border: none;
       border-radius: 999px;
       cursor: pointer;
       background: #4f46e5;
       color: #fff;
       font-weight: 600;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    button.secondary {
+      background: #64748b;
+    }
+
+    button.danger {
+      background: #dc2626;
     }
 
     button:disabled {
       opacity: 0.6;
       cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
     }
 
     button:not(:disabled):hover {
       transform: translateY(-1px);
       box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+    }
+
+    button.secondary:not(:disabled):hover {
+      box-shadow: 0 6px 16px rgba(100, 116, 139, 0.4);
+    }
+
+    button.danger:not(:disabled):hover {
+      box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
     }
 
     video {
@@ -79,8 +104,16 @@
     .message {
       margin-top: 16px;
       text-align: center;
-      color: #dc2626;
+      color: #334155;
       min-height: 1.5em;
+    }
+
+    .message.success {
+      color: #16a34a;
+    }
+
+    .message.error {
+      color: #dc2626;
     }
   </style>
 </head>
@@ -88,54 +121,173 @@
   <main>
     <h1>開啟相機預覽</h1>
     <p>按下下面的按鈕，瀏覽器會向你要求開啟相機的權限。</p>
-    <button id="openCamera">開啟相機</button>
     <video id="preview" playsinline autoplay muted></video>
     <div class="message" id="message"></div>
+    <div class="controls">
+      <button id="startCamera">開啟相機</button>
+      <button id="switchCamera" class="secondary" disabled>切換至前鏡頭</button>
+      <button id="stopCamera" class="danger" disabled>關閉相機</button>
+    </div>
+    
   </main>
 
   <script>
-    const openCameraButton = document.getElementById('openCamera');
+    const startCameraButton = document.getElementById('startCamera');
+    const switchCameraButton = document.getElementById('switchCamera');
+    const stopCameraButton = document.getElementById('stopCamera');
     const preview = document.getElementById('preview');
     const message = document.getElementById('message');
 
-    async function getCameraStream() {
+    let currentStream = null;
+    let currentFacingMode = 'environment';
+
+    function setMessage(text, type = 'info') {
+      message.textContent = text;
+      message.className = type === 'info' ? 'message' : `message ${type}`;
+    }
+
+    function stopCurrentStream() {
+      if (!currentStream) {
+        return;
+      }
+
+      currentStream.getTracks().forEach(track => {
+        try {
+          track.stop();
+        } catch (err) {
+          console.warn('停止媒體串流時發生問題', err);
+        }
+      });
+      currentStream = null;
+    }
+
+    function getFacingModeLabel(mode) {
+      if (mode === 'user') {
+        return '前';
+      }
+      if (mode === 'environment') {
+        return '後';
+      }
+      return '預設';
+    }
+
+    function updateSwitchButtonLabel() {
+      const nextMode = currentFacingMode === 'user' ? 'environment' : 'user';
+      switchCameraButton.textContent = nextMode === 'user' ? '切換至前鏡頭' : '切換至後鏡頭';
+    }
+
+    async function requestStreamForFacing(facingMode) {
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error('目前的瀏覽器不支援相機存取 (getUserMedia)。');
       }
 
-      // 要求使用者授權使用前鏡頭，若沒有則回退為預設相機
-      const constraints = {
-        video: {
-          facingMode: { ideal: 'environment' }
-        },
-        audio: false
-      };
+      const trialConstraints = [
+        { video: { facingMode: { exact: facingMode } }, audio: false },
+        { video: { facingMode: { ideal: facingMode } }, audio: false },
+        { video: true, audio: false }
+      ];
 
-      return navigator.mediaDevices.getUserMedia(constraints);
+      let lastError = null;
+
+      for (const constraints of trialConstraints) {
+        try {
+          return await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (error) {
+          lastError = error;
+        }
+      }
+
+      throw lastError ?? new Error('無法存取相機。');
     }
 
-    async function handleOpenCamera() {
-      openCameraButton.disabled = true;
-      message.textContent = '';
+    async function startCamera(statusText = '正在啟動相機...') {
+      startCameraButton.disabled = true;
+      switchCameraButton.disabled = true;
+      stopCameraButton.disabled = true;
+      setMessage(statusText);
 
       try {
-        const stream = await getCameraStream();
+        const stream = await requestStreamForFacing(currentFacingMode);
+        stopCurrentStream();
+
+        currentStream = stream;
         preview.srcObject = stream;
         preview.classList.add('active');
-        message.textContent = '相機已開啟。如需停止，請關閉此分頁或瀏覽器提供的相機控制。';
-        // 允許再次點擊以重新要求權限或切換裝置
-        openCameraButton.textContent = '重新嘗試開啟相機';
+
+        const [videoTrack] = stream.getVideoTracks();
+        if (videoTrack) {
+          const settings = videoTrack.getSettings();
+          if (settings.facingMode) {
+            currentFacingMode = settings.facingMode;
+          }
+        }
+
+        preview.play().catch(() => {
+          /* 某些平台需要使用者再次互動才能播放 */
+        });
+
+        setMessage(`目前使用${getFacingModeLabel(currentFacingMode)}鏡頭。如需停止，請按「關閉相機」。`, 'success');
+
+        stopCameraButton.disabled = false;
+        switchCameraButton.disabled = false;
+        return true;
       } catch (error) {
         console.error(error);
-        message.textContent = error.message || '無法存取相機，請確認權限設定或使用支援 HTTPS 的環境。';
+        stopCurrentStream();
+        preview.srcObject = null;
+        preview.classList.remove('active');
+        setMessage(error.message || '無法存取相機，請確認權限設定或使用支援 HTTPS 的環境。', 'error');
+        return false;
       } finally {
-        openCameraButton.disabled = false;
+        updateSwitchButtonLabel();
+        startCameraButton.disabled = false;
       }
     }
 
-    openCameraButton.addEventListener('click', handleOpenCamera);
+    function stopCamera() {
+      stopCurrentStream();
+      preview.pause?.();
+      preview.srcObject = null;
+      preview.classList.remove('active');
+      setMessage('相機已關閉。');
+      stopCameraButton.disabled = true;
+      switchCameraButton.disabled = true;
+      updateSwitchButtonLabel();
+    }
 
-    // 對於部分 iOS 裝置，必須在使用者互動後才啟用播放
+    async function handleStart() {
+      await startCamera();
+    }
+
+    async function handleSwitchCamera() {
+      if (!currentStream) {
+        setMessage('請先開啟相機後再切換鏡頭。');
+        return;
+      }
+
+      const originalMode = currentFacingMode;
+      currentFacingMode = originalMode === 'user' ? 'environment' : 'user';
+
+      const switched = await startCamera('正在切換鏡頭...');
+      if (!switched) {
+        currentFacingMode = originalMode;
+        const restored = await startCamera('正在恢復原本的鏡頭...');
+        if (!restored) {
+          stopCamera();
+        } else {
+          setMessage('目前裝置可能不支援另一個鏡頭，已恢復原本的鏡頭。');
+        }
+      }
+    }
+
+    function handleStop() {
+      stopCamera();
+    }
+
+    startCameraButton.addEventListener('click', handleStart);
+    switchCameraButton.addEventListener('click', handleSwitchCamera);
+    stopCameraButton.addEventListener('click', handleStop);
+
     preview.addEventListener('loadedmetadata', () => {
       preview.play().catch(() => {
         // play() 可能被拒絕，使用者可以再點一次按鈕
