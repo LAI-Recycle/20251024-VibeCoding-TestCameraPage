@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>VibeCam｜相機測試頁</title>
+  <title>VibeCam｜相機測試與文字辨識</title>
   <style>
     :root {
       color-scheme: light dark;
       font-family: "Segoe UI", "Noto Sans TC", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      line-height: 1.5;
+      line-height: 1.6;
     }
 
     * {
@@ -18,21 +18,21 @@
     body {
       margin: 0;
       min-height: 100vh;
+      padding: clamp(16px, 4vw, 48px);
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: clamp(16px, 4vw, 48px);
       background: radial-gradient(circle at top, #eef2ff, #e2e8f0 55%, #cbd5f5);
     }
 
     main {
-      width: min(960px, 100%);
-      background: rgba(255, 255, 255, 0.92);
-      border-radius: 20px;
-      padding: clamp(20px, 4vw, 40px);
-      box-shadow: 0 25px 60px rgba(15, 23, 42, 0.18);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(226, 232, 240, 0.9);
+      width: min(1024px, 100%);
+      background: rgba(255, 255, 255, 0.94);
+      border-radius: 24px;
+      padding: clamp(20px, 4vw, 48px);
+      box-shadow: 0 25px 60px rgba(15, 23, 42, 0.2);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(226, 232, 240, 0.8);
     }
 
     header {
@@ -54,15 +54,15 @@
     }
 
     h1 {
-      margin: 0 0 8px;
-      font-size: clamp(1.8rem, 2.6vw, 2.4rem);
+      margin: 0;
+      font-size: clamp(1.8rem, 2.8vw, 2.6rem);
       color: #0f172a;
     }
 
     header p {
-      margin: 0;
+      margin: 8px auto 0;
       color: #475569;
-      font-size: 1rem;
+      max-width: 560px;
     }
 
     section + section {
@@ -71,8 +71,8 @@
 
     .info-card {
       background: #f8fafc;
-      border-radius: 16px;
-      padding: 20px;
+      border-radius: 18px;
+      padding: 24px;
       border: 1px solid #e2e8f0;
     }
 
@@ -94,15 +94,9 @@
       margin-top: 12px;
       display: flex;
       flex-wrap: wrap;
-      gap: 10px 24px;
+      gap: 8px 24px;
       color: #475569;
       font-size: 0.95rem;
-    }
-
-    .meta span {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
     }
 
     .preview {
@@ -112,19 +106,18 @@
 
     .preview__frame {
       position: relative;
-      border-radius: 20px;
+      border-radius: 24px;
       overflow: hidden;
-      background: #0f172a;
       min-height: 280px;
-      border: 1px solid rgba(15, 23, 42, 0.4);
+      border: 1px solid rgba(15, 23, 42, 0.3);
+      background: #0f172a;
     }
 
     video {
       width: 100%;
-      display: block;
-      max-height: 520px;
+      height: 100%;
       object-fit: cover;
-      background: #000;
+      display: block;
       opacity: 0;
       transition: opacity 0.3s ease;
     }
@@ -138,14 +131,15 @@
       inset: 0;
       display: grid;
       place-items: center;
+      text-align: center;
       color: rgba(255, 255, 255, 0.85);
       font-weight: 500;
-      pointer-events: none;
+      padding: 24px;
     }
 
     .controls {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 12px;
     }
 
@@ -156,13 +150,13 @@
       font-size: 1rem;
       font-weight: 600;
       cursor: pointer;
-      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
       color: #fff;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
     }
 
     button:disabled {
-      cursor: not-allowed;
       opacity: 0.55;
+      cursor: not-allowed;
       box-shadow: none;
       transform: none;
     }
@@ -172,13 +166,9 @@
       box-shadow: 0 10px 24px rgba(79, 70, 229, 0.4);
     }
 
-    .btn-primary:not(:disabled):hover {
-      transform: translateY(-1px);
-    }
-
     .btn-secondary {
       background: #0ea5e9;
-      box-shadow: 0 10px 24px rgba(14, 165, 233, 0.25);
+      box-shadow: 0 10px 24px rgba(14, 165, 233, 0.3);
     }
 
     .btn-outline {
@@ -187,12 +177,17 @@
       color: #4f46e5;
     }
 
+    .btn-success {
+      background: #16a34a;
+      box-shadow: 0 10px 24px rgba(22, 163, 74, 0.35);
+    }
+
     .btn-danger {
       background: #dc2626;
     }
 
     .tips {
-      margin: 16px 0 0;
+      margin: 0;
       padding-left: 20px;
       color: #475569;
       font-size: 0.95rem;
@@ -200,14 +195,9 @@
 
     .gallery {
       background: #f8fafc;
-      border-radius: 16px;
-      padding: 20px;
+      border-radius: 18px;
+      padding: 24px;
       border: 1px dashed #cbd5f5;
-    }
-
-    .gallery header {
-      text-align: left;
-      margin: 0 0 16px;
     }
 
     .gallery__grid {
@@ -220,16 +210,16 @@
       margin: 0;
       border-radius: 14px;
       overflow: hidden;
-      background: #fff;
       border: 1px solid #e2e8f0;
+      background: #fff;
       box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
     }
 
     figure img {
-      display: block;
       width: 100%;
       height: 130px;
       object-fit: cover;
+      display: block;
     }
 
     figure time {
@@ -240,10 +230,28 @@
     }
 
     .empty {
-      margin: 0;
+      margin: 12px 0 0;
       text-align: center;
       color: #94a3b8;
       font-weight: 500;
+    }
+
+    .ocr-output {
+      margin: 16px 0 0;
+      padding: 16px;
+      min-height: 140px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #0f172a;
+    }
+
+    .ocr-output:empty::before {
+      content: "目前尚無辨識結果";
+      color: #94a3b8;
     }
 
     [hidden] {
@@ -262,13 +270,13 @@
     <header>
       <div class="badge">Vibe Coding · Camera Playground</div>
       <h1>Web 相機測試與快照</h1>
-      <p>確認權限、切換鏡頭、擷取畫面，快速驗證裝置支援度</p>
+      <p>確認權限、切換鏡頭、擷取畫面，並以 Tesseract.js 即時辨識繁體中文與英文。</p>
     </header>
 
     <section class="info-card">
       <p id="message" class="message" aria-live="polite">尚未啟動鏡頭</p>
       <div class="meta">
-        <span id="cameraLabel">鏡頭：待機</span>
+        <span id="cameraLabel">鏡頭：待命</span>
         <span id="resolutionLabel">解析度：-- × --</span>
       </div>
     </section>
@@ -282,12 +290,13 @@
         <button id="startCamera" class="btn-primary">啟動相機</button>
         <button id="switchCamera" class="btn-secondary" disabled>切換鏡頭</button>
         <button id="takePhoto" class="btn-outline" disabled>擷取快照</button>
+        <button id="recognizeText" class="btn-success" disabled>辨識文字</button>
         <button id="stopCamera" class="btn-danger" disabled>停止相機</button>
         <button id="clearSnapshots" class="btn-outline" disabled>清空快照</button>
       </div>
       <ul class="tips">
-        <li>此頁需透過 HTTPS 存取才能呼叫相機（本機請使用 `https://localhost` 或 GitHub Pages）。</li>
-        <li>若裝置僅有單一鏡頭，切換功能會自動還原為可用的鏡頭。</li>
+        <li>此頁需透過 HTTPS 存取才能呼叫相機（本機請使用 <code>https://localhost</code> 或 GitHub Pages）。</li>
+        <li>若裝置只有單一鏡頭，切換按鈕會自動還原至可用的鏡頭。</li>
       </ul>
     </section>
 
@@ -298,14 +307,23 @@
       <div id="snapshots" class="gallery__grid" role="list"></div>
       <p id="emptyState" class="empty">尚無快照紀錄</p>
     </section>
+
+    <section class="info-card">
+      <h2>文字辨識</h2>
+      <p>按下「辨識文字」後，系統會先將最新快照轉為灰階、高對比影像，再交給 Tesseract.js 解析繁中＋英文。</p>
+      <p id="ocrStatus" class="message" aria-live="polite">尚未開始辨識</p>
+      <pre id="ocrOutput" class="ocr-output"></pre>
+    </section>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
   <script>
     (() => {
       const state = {
         stream: null,
         facingMode: "environment",
-        maxSnapshots: 6
+        maxSnapshots: 6,
+        isRecognizing: false
       };
 
       const ui = {
@@ -315,12 +333,15 @@
         switchBtn: document.getElementById("switchCamera"),
         stopBtn: document.getElementById("stopCamera"),
         snapBtn: document.getElementById("takePhoto"),
+        recognizeBtn: document.getElementById("recognizeText"),
         clearBtn: document.getElementById("clearSnapshots"),
         message: document.getElementById("message"),
         cameraLabel: document.getElementById("cameraLabel"),
         resolutionLabel: document.getElementById("resolutionLabel"),
         snapshots: document.getElementById("snapshots"),
-        emptyState: document.getElementById("emptyState")
+        emptyState: document.getElementById("emptyState"),
+        ocrStatus: document.getElementById("ocrStatus"),
+        ocrOutput: document.getElementById("ocrOutput")
       };
 
       const supportsCamera = () =>
@@ -331,7 +352,12 @@
         ui.message.dataset.variant = variant;
       };
 
-      const setCameraMeta = (label = "鏡頭：待機", resolution = "解析度：-- × --") => {
+      const setOcrStatus = (text, variant = "info") => {
+        ui.ocrStatus.textContent = text;
+        ui.ocrStatus.dataset.variant = variant;
+      };
+
+      const setCameraMeta = (label = "鏡頭：待命", resolution = "解析度：-- × --") => {
         ui.cameraLabel.textContent = label;
         ui.resolutionLabel.textContent = resolution;
       };
@@ -347,11 +373,16 @@
         ui.switchBtn.disabled = !active;
         ui.stopBtn.disabled = !active;
         ui.snapBtn.disabled = !active;
-        ui.clearBtn.disabled = ui.snapshots.children.length === 0;
       };
 
-      const stopStream = (options = {}) => {
-        const silent = Boolean(options.silent);
+      const updateGalleryState = () => {
+        const hasSnapshots = ui.snapshots.children.length > 0;
+        ui.emptyState.hidden = hasSnapshots;
+        ui.clearBtn.disabled = !hasSnapshots;
+        ui.recognizeBtn.disabled = !hasSnapshots || state.isRecognizing;
+      };
+
+      const stopStream = ({ silent = false } = {}) => {
         if (!state.stream) return;
         state.stream.getTracks().forEach(track => track.stop());
         state.stream = null;
@@ -364,16 +395,16 @@
         }
       };
 
-      const resolveErrorMessage = error => {
+      const resolveErrorMessage = (error) => {
         switch (error?.name) {
           case "NotAllowedError":
-            return "權限被拒絕，請允許相機權限後再試一次。";
+            return "權限被拒絕，請允許相機後再試一次。";
           case "NotFoundError":
-            return "找不到相機裝置，請確認硬體或驅動是否正常。";
+            return "找不到相機裝置，請確認硬體是否可用。";
           case "NotReadableError":
-            return "相機正被其他程式占用，請先釋放裝置。";
+            return "相機被其他程式占用，請稍後再啟動。";
           case "OverconstrainedError":
-            return "裝置無法滿足要求的解析度，請降低解析度或更換鏡頭。";
+            return "目前裝置無法滿足要求的解析度，請降低數值。";
           default:
             return "請確認瀏覽器支援 getUserMedia 並於 HTTPS 環境執行。";
         }
@@ -392,7 +423,7 @@
 
       const startCamera = async (customMessage) => {
         if (!supportsCamera()) {
-          setMessage("此瀏覽器不支援相機 API，請改用最新的 Chrome / Edge / Safari。", "error");
+          setMessage("此瀏覽器不支援相機 API，請改用最新版 Chrome / Edge / Safari。", "error");
           return false;
         }
 
@@ -401,7 +432,6 @@
 
         try {
           stopStream({ silent: true });
-          ui.startBtn.disabled = true;
           const constraints = {
             audio: false,
             video: {
@@ -424,7 +454,7 @@
         } catch (error) {
           console.error(error);
           setMessage(`無法啟動相機：${resolveErrorMessage(error)}`, "error");
-          stopStream();
+          stopStream({ silent: true });
           ui.startBtn.disabled = false;
           return false;
         }
@@ -439,6 +469,7 @@
         state.facingMode = originalMode === "user" ? "environment" : "user";
         ui.switchBtn.disabled = true;
         updateSwitchLabel();
+
         const switched = await startCamera("正在切換鏡頭…");
         if (!switched) {
           state.facingMode = originalMode;
@@ -451,6 +482,7 @@
 
       const createSnapshotElement = (dataUrl) => {
         const figure = document.createElement("figure");
+        figure.dataset.url = dataUrl;
         figure.setAttribute("role", "listitem");
 
         const link = document.createElement("a");
@@ -473,12 +505,6 @@
         return figure;
       };
 
-      const updateGalleryState = () => {
-        const hasSnapshots = ui.snapshots.children.length > 0;
-        ui.emptyState.hidden = hasSnapshots;
-        ui.clearBtn.disabled = !hasSnapshots;
-      };
-
       const addSnapshot = (dataUrl) => {
         const card = createSnapshotElement(dataUrl);
         ui.snapshots.prepend(card);
@@ -486,6 +512,12 @@
           ui.snapshots.removeChild(ui.snapshots.lastElementChild);
         }
         updateGalleryState();
+      };
+
+      const getLatestSnapshotDataUrl = () => {
+        const latest = ui.snapshots.firstElementChild;
+        if (!latest) return null;
+        return latest.dataset.url || latest.querySelector("a")?.href || null;
       };
 
       const takeSnapshot = () => {
@@ -514,9 +546,99 @@
         setMessage("快照已儲存於下方列表，可以點擊下載。", "success");
       };
 
+      const preprocessImageForOcr = (dataUrl) =>
+        new Promise((resolve, reject) => {
+          const image = new Image();
+          image.onload = () => {
+            const maxWidth = 1600;
+            const scale = Math.min(1, maxWidth / image.width);
+            const targetWidth = Math.round(image.width * scale);
+            const targetHeight = Math.round(image.height * scale);
+            const canvas = document.createElement("canvas");
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            const context = canvas.getContext("2d");
+            context.imageSmoothingEnabled = true;
+            context.drawImage(image, 0, 0, targetWidth, targetHeight);
+
+            const imageData = context.getImageData(0, 0, targetWidth, targetHeight);
+            const { data } = imageData;
+            const contrast = 1.2;
+            const brightness = 10;
+            for (let i = 0; i < data.length; i += 4) {
+              const r = data[i];
+              const g = data[i + 1];
+              const b = data[i + 2];
+              let value = 0.299 * r + 0.587 * g + 0.114 * b;
+              value = (value - 128) * contrast + 128 + brightness;
+              value = Math.max(0, Math.min(255, value));
+              data[i] = data[i + 1] = data[i + 2] = value;
+            }
+            context.putImageData(imageData, 0, 0);
+            resolve(canvas.toDataURL("image/png"));
+          };
+          image.onerror = () => reject(new Error("無法載入快照供文字辨識使用。"));
+          image.src = dataUrl;
+        });
+
+      const recognizeSnapshot = async () => {
+        if (state.isRecognizing) return;
+
+        const dataUrl = getLatestSnapshotDataUrl();
+        if (!dataUrl) {
+          setMessage("請先擷取快照後再進行文字辨識。", "error");
+          return;
+        }
+        if (typeof Tesseract === "undefined" || typeof Tesseract.recognize !== "function") {
+          setMessage("Tesseract.js 尚未載入，請重新整理頁面後再試。", "error");
+          return;
+        }
+
+        state.isRecognizing = true;
+        updateGalleryState();
+        setOcrStatus("影像強化中…");
+        ui.ocrOutput.textContent = "正在提升對比與清晰度…";
+
+        try {
+          const enhancedDataUrl = await preprocessImageForOcr(dataUrl);
+          setOcrStatus("辨識中，請稍候…");
+
+          const recognizeOptions = {
+            logger: ({ status, progress }) => {
+              if (status === "recognizing text") {
+                const percent = Math.round((progress || 0) * 100);
+                setOcrStatus(`辨識中（${percent}%）…`);
+              }
+            }
+          };
+          if (Tesseract.PSM?.SINGLE_BLOCK) {
+            recognizeOptions.tessedit_pageseg_mode = Tesseract.PSM.SINGLE_BLOCK;
+          }
+
+          const { data } = await Tesseract.recognize(enhancedDataUrl, "chi_tra+eng", recognizeOptions);
+          const text = data?.text?.trim();
+          if (text) {
+            setOcrStatus("辨識完成", "success");
+            ui.ocrOutput.textContent = text;
+          } else {
+            setOcrStatus("未偵測到文字", "error");
+            ui.ocrOutput.textContent = "（空白結果）";
+          }
+        } catch (error) {
+          console.error(error);
+          setOcrStatus("辨識失敗，請稍後再試。", "error");
+          ui.ocrOutput.textContent = error?.message || "Unexpected error";
+        } finally {
+          state.isRecognizing = false;
+          updateGalleryState();
+        }
+      };
+
       const clearSnapshots = () => {
         ui.snapshots.innerHTML = "";
         updateGalleryState();
+        ui.ocrOutput.textContent = "";
+        setOcrStatus("尚未開始辨識");
         setMessage("已清空快照。");
       };
 
@@ -527,14 +649,15 @@
         setMessage("相機已停止。");
       });
       ui.snapBtn.addEventListener("click", takeSnapshot);
+      ui.recognizeBtn.addEventListener("click", recognizeSnapshot);
       ui.clearBtn.addEventListener("click", clearSnapshots);
 
       ui.preview.addEventListener("loadedmetadata", updateResolutionLabel);
-
       window.addEventListener("beforeunload", () => stopStream({ silent: true }));
 
       updateSwitchLabel();
       syncControls();
+      updateGalleryState();
     })();
   </script>
 </body>
