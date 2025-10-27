@@ -1,481 +1,541 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>相機開啟示範</title>
+  <title>VibeCam｜相機測試頁</title>
   <style>
     :root {
       color-scheme: light dark;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: "Segoe UI", "Noto Sans TC", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.5;
+    }
+
+    * {
+      box-sizing: border-box;
     }
 
     body {
       margin: 0;
       min-height: 100vh;
-      display: grid;
-      place-items: center;
-      background: linear-gradient(180deg, #f4f4f4 0%, #eaeaea 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(16px, 4vw, 48px);
+      background: radial-gradient(circle at top, #eef2ff, #e2e8f0 55%, #cbd5f5);
     }
 
     main {
-      box-sizing: border-box;
-      width: min(90vw, 480px);
-      padding: 24px;
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.85);
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
-      backdrop-filter: blur(8px);
+      width: min(960px, 100%);
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 20px;
+      padding: clamp(20px, 4vw, 40px);
+      box-shadow: 0 25px 60px rgba(15, 23, 42, 0.18);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #4338ca;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 12px;
     }
 
     h1 {
-      margin: 0 0 16px;
-      text-align: center;
-      font-size: 1.75rem;
-      color: #111;
+      margin: 0 0 8px;
+      font-size: clamp(1.8rem, 2.6vw, 2.4rem);
+      color: #0f172a;
     }
 
-    p {
-      margin: 0 0 24px;
-      text-align: center;
-      line-height: 1.6;
-      color: #111;
+    header p {
+      margin: 0;
+      color: #475569;
+      font-size: 1rem;
+    }
+
+    section + section {
+      margin-top: 32px;
+    }
+
+    .info-card {
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .message {
+      margin: 0;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .message[data-variant="success"] {
+      color: #15803d;
+    }
+
+    .message[data-variant="error"] {
+      color: #dc2626;
+    }
+
+    .meta {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 24px;
+      color: #475569;
+      font-size: 0.95rem;
+    }
+
+    .meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .preview {
+      display: grid;
+      gap: 16px;
+    }
+
+    .preview__frame {
+      position: relative;
+      border-radius: 20px;
+      overflow: hidden;
+      background: #0f172a;
+      min-height: 280px;
+      border: 1px solid rgba(15, 23, 42, 0.4);
+    }
+
+    video {
+      width: 100%;
+      display: block;
+      max-height: 520px;
+      object-fit: cover;
+      background: #000;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    video.is-active {
+      opacity: 1;
+    }
+
+    .preview__hint {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: rgba(255, 255, 255, 0.85);
+      font-weight: 500;
+      pointer-events: none;
     }
 
     .controls {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 12px;
     }
 
     button {
-      width: 100%;
-      padding: 14px 20px;
-      font-size: 1.05rem;
       border: none;
       border-radius: 999px;
-      cursor: pointer;
-      background: #4f46e5;
-      color: #fff;
+      padding: 14px 20px;
+      font-size: 1rem;
       font-weight: 600;
+      cursor: pointer;
       transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+      color: #fff;
     }
 
-    button.secondary {
-      background: #64748b;
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+      box-shadow: none;
+      transform: none;
     }
 
-    button.danger {
-      background: #dc2626;
+    .btn-primary {
+      background: #4f46e5;
+      box-shadow: 0 10px 24px rgba(79, 70, 229, 0.4);
     }
 
-    button.outline {
+    .btn-primary:not(:disabled):hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #0ea5e9;
+      box-shadow: 0 10px 24px rgba(14, 165, 233, 0.25);
+    }
+
+    .btn-outline {
       background: transparent;
       border: 2px solid #4f46e5;
       color: #4f46e5;
     }
 
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      box-shadow: none;
-      transform: none;
+    .btn-danger {
+      background: #dc2626;
     }
 
-    button:not(:disabled):hover {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
-    }
-
-    button.secondary:not(:disabled):hover {
-      box-shadow: 0 6px 16px rgba(100, 116, 139, 0.4);
-    }
-
-    button.danger:not(:disabled):hover {
-      box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
-    }
-
-    button.outline:not(:disabled):hover {
-      box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
-    }
-
-    video {
-      display: none;
-      width: 100%;
-      margin-top: 24px;
-      border-radius: 12px;
-      background: #000;
-    }
-
-    video.active {
-      display: block;
-    }
-
-    .message {
-      margin-top: 16px;
-      text-align: center;
-      color: #334155;
-      min-height: 1.5em;
-    }
-
-    .message.success {
-      color: #16a34a;
-    }
-
-    .message.error {
-      color: #dc2626;
+    .tips {
+      margin: 16px 0 0;
+      padding-left: 20px;
+      color: #475569;
+      font-size: 0.95rem;
     }
 
     .gallery {
-      margin-top: 32px;
-      transition: opacity 0.2s ease;
-    }
-
-    .gallery[data-empty="true"] .gallery-grid {
-      display: none;
-    }
-
-    .gallery[data-empty="false"] .gallery-empty {
-      display: none;
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px dashed #cbd5f5;
     }
 
     .gallery header {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      margin-bottom: 12px;
+      text-align: left;
+      margin: 0 0 16px;
     }
 
-    .gallery-title {
+    .gallery__grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 16px;
+    }
+
+    figure {
       margin: 0;
-      font-size: 1.25rem;
-      color: #111;
-    }
-
-    .gallery-help {
-      margin: 0;
-      font-size: 0.9rem;
-      color: #475569;
-      text-align: right;
-    }
-
-    .gallery-grid {
-      display: flex;
-      flex-direction: column-reverse;
-      gap: 12px;
-    }
-
-    .snapshot {
-      border-radius: 12px;
+      border-radius: 14px;
       overflow: hidden;
-      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
-      background: #0f172a;
-      position: relative;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
     }
 
-    .snapshot img {
-      width: 100%;
-      height: 100%;
+    figure img {
       display: block;
+      width: 100%;
+      height: 130px;
       object-fit: cover;
     }
 
-    .snapshot time {
-      position: absolute;
-      inset: auto 0 0 0;
-      padding: 4px 6px;
-      font-size: 0.75rem;
-      text-align: center;
-      color: rgba(255, 255, 255, 0.8);
-      background: rgba(30, 41, 59, 0.7);
-      pointer-events: none;
-    }
-
-    .snapshot a {
+    figure time {
       display: block;
-      color: inherit;
-      text-decoration: none;
-      line-height: 0;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      color: #475569;
     }
 
-    .gallery-empty {
-      margin: 12px 0 0;
+    .empty {
+      margin: 0;
       text-align: center;
       color: #94a3b8;
-      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    @media (max-width: 720px) {
+      .controls {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      }
     }
   </style>
 </head>
 <body>
   <main>
-    <h1>開啟相機預覽</h1>
-    <p>按下下面的按鈕，瀏覽器會向你要求開啟相機的權限。</p>
-    <div class="controls">
-      <button id="startCamera">開啟相機</button>
-      <button id="takePhoto" class="outline" disabled>拍照</button>
-      <button id="switchCamera" class="secondary" disabled>切換至前鏡頭</button>
-      <button id="stopCamera" class="danger" disabled>關閉相機</button>
-    </div>
-    <video id="preview" playsinline autoplay muted></video>
-    <div class="message" id="message"></div>
-    <section class="gallery" aria-live="polite" data-empty="true">
+    <header>
+      <div class="badge">Vibe Coding · Camera Playground</div>
+      <h1>Web 相機測試與快照</h1>
+      <p>確認權限、切換鏡頭、擷取畫面，快速驗證裝置支援度</p>
+    </header>
+
+    <section class="info-card">
+      <p id="message" class="message" aria-live="polite">尚未啟動鏡頭</p>
+      <div class="meta">
+        <span id="cameraLabel">鏡頭：待機</span>
+        <span id="resolutionLabel">解析度：-- × --</span>
+      </div>
+    </section>
+
+    <section class="preview">
+      <div class="preview__frame">
+        <video id="preview" playsinline autoplay muted></video>
+        <div class="preview__hint" id="previewHint">允許相機權限後即可看到畫面</div>
+      </div>
+      <div class="controls">
+        <button id="startCamera" class="btn-primary">啟動相機</button>
+        <button id="switchCamera" class="btn-secondary" disabled>切換鏡頭</button>
+        <button id="takePhoto" class="btn-outline" disabled>擷取快照</button>
+        <button id="stopCamera" class="btn-danger" disabled>停止相機</button>
+        <button id="clearSnapshots" class="btn-outline" disabled>清空快照</button>
+      </div>
+      <ul class="tips">
+        <li>此頁需透過 HTTPS 存取才能呼叫相機（本機請使用 `https://localhost` 或 GitHub Pages）。</li>
+        <li>若裝置僅有單一鏡頭，切換功能會自動還原為可用的鏡頭。</li>
+      </ul>
+    </section>
+
+    <section class="gallery">
       <header>
-        <h2 class="gallery-title">拍攝紀錄</h2>
-        <p class="gallery-help">僅保留最新 3 張照片，可點擊縮圖下載</p>
+        <h2>最新快照（最多 6 張）</h2>
       </header>
-      <p class="gallery-empty" id="galleryEmpty">尚未拍照。</p>
-      <div class="gallery-grid" id="snapshots"></div>
+      <div id="snapshots" class="gallery__grid" role="list"></div>
+      <p id="emptyState" class="empty">尚無快照紀錄</p>
     </section>
   </main>
 
   <script>
-    const startCameraButton = document.getElementById('startCamera');
-    const takePhotoButton = document.getElementById('takePhoto');
-    const switchCameraButton = document.getElementById('switchCamera');
-    const stopCameraButton = document.getElementById('stopCamera');
-    const preview = document.getElementById('preview');
-    const message = document.getElementById('message');
-    const snapshots = document.getElementById('snapshots');
-    const gallerySection = document.querySelector('.gallery');
-    const galleryEmpty = document.getElementById('galleryEmpty');
+    (() => {
+      const state = {
+        stream: null,
+        facingMode: "environment",
+        maxSnapshots: 6
+      };
 
-    let currentStream = null;
-    let currentFacingMode = 'environment';
-    const maxSnapshots = 3;
+      const ui = {
+        preview: document.getElementById("preview"),
+        previewHint: document.getElementById("previewHint"),
+        startBtn: document.getElementById("startCamera"),
+        switchBtn: document.getElementById("switchCamera"),
+        stopBtn: document.getElementById("stopCamera"),
+        snapBtn: document.getElementById("takePhoto"),
+        clearBtn: document.getElementById("clearSnapshots"),
+        message: document.getElementById("message"),
+        cameraLabel: document.getElementById("cameraLabel"),
+        resolutionLabel: document.getElementById("resolutionLabel"),
+        snapshots: document.getElementById("snapshots"),
+        emptyState: document.getElementById("emptyState")
+      };
 
-    updateGalleryState();
+      const supportsCamera = () =>
+        Boolean(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
 
-    function setMessage(text, type = 'info') {
-      message.textContent = text;
-      message.className = type === 'info' ? 'message' : `message ${type}`;
-    }
+      const setMessage = (text, variant = "info") => {
+        ui.message.textContent = text;
+        ui.message.dataset.variant = variant;
+      };
 
-    function updateGalleryState() {
-      const hasSnapshots = snapshots.children.length > 0;
-      gallerySection.dataset.empty = hasSnapshots ? 'false' : 'true';
-      if (hasSnapshots) {
-        galleryEmpty.setAttribute('hidden', 'hidden');
-      } else {
-        galleryEmpty.removeAttribute('hidden');
-      }
-    }
+      const setCameraMeta = (label = "鏡頭：待機", resolution = "解析度：-- × --") => {
+        ui.cameraLabel.textContent = label;
+        ui.resolutionLabel.textContent = resolution;
+      };
 
-    function stopCurrentStream() {
-      if (!currentStream) {
-        return;
-      }
+      const updateSwitchLabel = () => {
+        const target = state.facingMode === "user" ? "後鏡頭" : "前鏡頭";
+        ui.switchBtn.textContent = `切換至${target}`;
+      };
 
-      currentStream.getTracks().forEach(track => {
-        try {
-          track.stop();
-        } catch (err) {
-          console.warn('停止媒體串流時發生問題', err);
+      const syncControls = () => {
+        const active = Boolean(state.stream);
+        ui.startBtn.disabled = active;
+        ui.switchBtn.disabled = !active;
+        ui.stopBtn.disabled = !active;
+        ui.snapBtn.disabled = !active;
+        ui.clearBtn.disabled = ui.snapshots.children.length === 0;
+      };
+
+      const stopStream = (options = {}) => {
+        const silent = Boolean(options.silent);
+        if (!state.stream) return;
+        state.stream.getTracks().forEach(track => track.stop());
+        state.stream = null;
+        ui.preview.srcObject = null;
+        ui.preview.classList.remove("is-active");
+        ui.previewHint.hidden = false;
+        setCameraMeta();
+        if (!silent) {
+          syncControls();
         }
-      });
-      currentStream = null;
-    }
+      };
 
-    function getFacingModeLabel(mode) {
-      if (mode === 'user') {
-        return '前';
-      }
-      if (mode === 'environment') {
-        return '後';
-      }
-      return '預設';
-    }
+      const resolveErrorMessage = error => {
+        switch (error?.name) {
+          case "NotAllowedError":
+            return "權限被拒絕，請允許相機權限後再試一次。";
+          case "NotFoundError":
+            return "找不到相機裝置，請確認硬體或驅動是否正常。";
+          case "NotReadableError":
+            return "相機正被其他程式占用，請先釋放裝置。";
+          case "OverconstrainedError":
+            return "裝置無法滿足要求的解析度，請降低解析度或更換鏡頭。";
+          default:
+            return "請確認瀏覽器支援 getUserMedia 並於 HTTPS 環境執行。";
+        }
+      };
 
-    function updateSwitchButtonLabel() {
-      const nextMode = currentFacingMode === 'user' ? 'environment' : 'user';
-      switchCameraButton.textContent = nextMode === 'user' ? '切換至前鏡頭' : '切換至後鏡頭';
-    }
+      const updateResolutionLabel = () => {
+        const [track] = state.stream?.getVideoTracks() ?? [];
+        if (!track) return;
+        const settings = track.getSettings();
+        const label = settings.label || (state.facingMode === "user" ? "前鏡頭" : "後鏡頭");
+        const size = settings.width && settings.height
+          ? `${settings.width} × ${settings.height}`
+          : "-- × --";
+        setCameraMeta(`鏡頭：${label}`, `解析度：${size}`);
+      };
 
-    async function requestStreamForFacing(facingMode) {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error('目前的瀏覽器不支援相機存取 (getUserMedia)。');
-      }
+      const startCamera = async (customMessage) => {
+        if (!supportsCamera()) {
+          setMessage("此瀏覽器不支援相機 API，請改用最新的 Chrome / Edge / Safari。", "error");
+          return false;
+        }
 
-      const trialConstraints = [
-        { video: { facingMode: { exact: facingMode } }, audio: false },
-        { video: { facingMode: { ideal: facingMode } }, audio: false },
-        { video: true, audio: false }
-      ];
+        ui.startBtn.disabled = true;
+        setMessage(customMessage ?? "請允許瀏覽器使用相機…");
 
-      let lastError = null;
-
-      for (const constraints of trialConstraints) {
         try {
-          return await navigator.mediaDevices.getUserMedia(constraints);
+          stopStream({ silent: true });
+          ui.startBtn.disabled = true;
+          const constraints = {
+            audio: false,
+            video: {
+              facingMode: { ideal: state.facingMode },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 }
+            }
+          };
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          state.stream = stream;
+          ui.preview.srcObject = stream;
+          await ui.preview.play().catch(() => {});
+          ui.preview.classList.add("is-active");
+          ui.previewHint.hidden = true;
+          updateResolutionLabel();
+          updateSwitchLabel();
+          setMessage("相機已啟動，現在可以擷取快照。", "success");
+          syncControls();
+          return true;
         } catch (error) {
-          lastError = error;
+          console.error(error);
+          setMessage(`無法啟動相機：${resolveErrorMessage(error)}`, "error");
+          stopStream();
+          ui.startBtn.disabled = false;
+          return false;
         }
-      }
+      };
 
-      throw lastError ?? new Error('無法存取相機。');
-    }
+      const switchCamera = async () => {
+        if (!state.stream) {
+          setMessage("請先啟動相機後再切換鏡頭。", "error");
+          return;
+        }
+        const originalMode = state.facingMode;
+        state.facingMode = originalMode === "user" ? "environment" : "user";
+        ui.switchBtn.disabled = true;
+        updateSwitchLabel();
+        const switched = await startCamera("正在切換鏡頭…");
+        if (!switched) {
+          state.facingMode = originalMode;
+          updateSwitchLabel();
+          await startCamera("恢復原本的鏡頭…");
+          setMessage("裝置無法使用另一個鏡頭，已恢復原設定。", "error");
+        }
+        ui.switchBtn.disabled = !state.stream;
+      };
 
-    async function startCamera(statusText = '正在啟動相機...') {
-      startCameraButton.disabled = true;
-      switchCameraButton.disabled = true;
-      stopCameraButton.disabled = true;
-      takePhotoButton.disabled = true;
-      setMessage(statusText);
+      const createSnapshotElement = (dataUrl) => {
+        const figure = document.createElement("figure");
+        figure.setAttribute("role", "listitem");
 
-      try {
-        const stream = await requestStreamForFacing(currentFacingMode);
-        stopCurrentStream();
+        const link = document.createElement("a");
+        link.href = dataUrl;
+        link.download = `snapshot-${Date.now()}.jpg`;
+        link.title = "下載快照";
 
-        currentStream = stream;
-        preview.srcObject = stream;
-        preview.classList.add('active');
+        const img = document.createElement("img");
+        img.src = dataUrl;
+        img.alt = "相機快照";
 
-        const [videoTrack] = stream.getVideoTracks();
-        if (videoTrack) {
-          const settings = videoTrack.getSettings();
-          if (settings.facingMode) {
-            currentFacingMode = settings.facingMode;
-          }
+        const timeLabel = document.createElement("time");
+        const now = new Date();
+        timeLabel.dateTime = now.toISOString();
+        timeLabel.textContent = now.toLocaleTimeString("zh-Hant", { hour12: false });
+
+        link.appendChild(img);
+        figure.appendChild(link);
+        figure.appendChild(timeLabel);
+        return figure;
+      };
+
+      const updateGalleryState = () => {
+        const hasSnapshots = ui.snapshots.children.length > 0;
+        ui.emptyState.hidden = hasSnapshots;
+        ui.clearBtn.disabled = !hasSnapshots;
+      };
+
+      const addSnapshot = (dataUrl) => {
+        const card = createSnapshotElement(dataUrl);
+        ui.snapshots.prepend(card);
+        while (ui.snapshots.children.length > state.maxSnapshots) {
+          ui.snapshots.removeChild(ui.snapshots.lastElementChild);
+        }
+        updateGalleryState();
+      };
+
+      const takeSnapshot = () => {
+        if (!state.stream) {
+          setMessage("尚未啟動相機，無法擷取快照。", "error");
+          return;
+        }
+        const width = ui.preview.videoWidth;
+        const height = ui.preview.videoHeight;
+        if (!width || !height) {
+          setMessage("相機尚未準備完成，請稍候再試。", "error");
+          return;
         }
 
-        preview.play().catch(() => {
-          /* 某些平台需要使用者再次互動才能播放 */
-        });
-
-        setMessage(`目前使用${getFacingModeLabel(currentFacingMode)}鏡頭。如需停止，請按「關閉相機」。`, 'success');
-
-        stopCameraButton.disabled = false;
-        switchCameraButton.disabled = false;
-        takePhotoButton.disabled = false;
-        return true;
-      } catch (error) {
-        console.error(error);
-        stopCurrentStream();
-        preview.srcObject = null;
-        preview.classList.remove('active');
-        setMessage(error.message || '無法存取相機，請確認權限設定或使用支援 HTTPS 的環境。', 'error');
-        return false;
-      } finally {
-        updateSwitchButtonLabel();
-        startCameraButton.disabled = false;
-      }
-    }
-
-    function stopCamera() {
-      stopCurrentStream();
-      preview.pause?.();
-      preview.srcObject = null;
-      preview.classList.remove('active');
-      setMessage('相機已關閉。');
-      stopCameraButton.disabled = true;
-      switchCameraButton.disabled = true;
-      takePhotoButton.disabled = true;
-      updateSwitchButtonLabel();
-    }
-
-    async function handleStart() {
-      await startCamera();
-    }
-
-    async function handleSwitchCamera() {
-      if (!currentStream) {
-        setMessage('請先開啟相機後再切換鏡頭。');
-        return;
-      }
-
-      const originalMode = currentFacingMode;
-      currentFacingMode = originalMode === 'user' ? 'environment' : 'user';
-
-      const switched = await startCamera('正在切換鏡頭...');
-      if (!switched) {
-        currentFacingMode = originalMode;
-        const restored = await startCamera('正在恢復原本的鏡頭...');
-        if (!restored) {
-          stopCamera();
-        } else {
-          setMessage('目前裝置可能不支援另一個鏡頭，已恢復原本的鏡頭。');
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext("2d");
+        if (!context) {
+          setMessage("瀏覽器無法建立快照緩衝，請改用桌機瀏覽器。", "error");
+          return;
         }
-      }
-    }
+        context.drawImage(ui.preview, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+        addSnapshot(dataUrl);
+        setMessage("快照已儲存於下方列表，可以點擊下載。", "success");
+      };
 
-    function handleStop() {
-      stopCamera();
-    }
+      const clearSnapshots = () => {
+        ui.snapshots.innerHTML = "";
+        updateGalleryState();
+        setMessage("已清空快照。");
+      };
 
-    function createSnapshotElement(dataUrl) {
-      const figure = document.createElement('figure');
-      figure.className = 'snapshot';
-
-      const link = document.createElement('a');
-      link.href = dataUrl;
-      link.download = `snapshot-${Date.now()}.jpg`;
-      link.title = '點擊下載圖片';
-
-      const img = document.createElement('img');
-      img.src = dataUrl;
-      img.alt = '拍攝快照';
-
-      const timeLabel = document.createElement('time');
-      const now = new Date();
-      timeLabel.dateTime = now.toISOString();
-      timeLabel.textContent = new Intl.DateTimeFormat('zh-Hant', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      }).format(now);
-
-      link.appendChild(img);
-      figure.appendChild(link);
-      figure.appendChild(timeLabel);
-
-      return figure;
-    }
-
-    function addSnapshot(dataUrl) {
-      const element = createSnapshotElement(dataUrl);
-      snapshots.appendChild(element);
-
-      while (snapshots.children.length > maxSnapshots) {
-        snapshots.removeChild(snapshots.firstElementChild);
-      }
-
-      updateGalleryState();
-    }
-
-    function handleTakePhoto() {
-      if (!currentStream) {
-        setMessage('請先開啟相機後再拍照。', 'error');
-        return;
-      }
-
-      const videoWidth = preview.videoWidth;
-      const videoHeight = preview.videoHeight;
-
-      if (!videoWidth || !videoHeight) {
-        setMessage('相機尚未準備完成，請稍候再拍照。', 'error');
-        return;
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = videoWidth;
-      canvas.height = videoHeight;
-      const context = canvas.getContext('2d');
-      context.drawImage(preview, 0, 0, canvas.width, canvas.height);
-
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-      addSnapshot(dataUrl);
-      setMessage('已拍照，縮圖已顯示於下方，可點擊下載。', 'success');
-    }
-
-    startCameraButton.addEventListener('click', handleStart);
-    takePhotoButton.addEventListener('click', handleTakePhoto);
-    switchCameraButton.addEventListener('click', handleSwitchCamera);
-    stopCameraButton.addEventListener('click', handleStop);
-
-    preview.addEventListener('loadedmetadata', () => {
-      preview.play().catch(() => {
-        // play() 可能被拒絕，使用者可以再點一次按鈕
+      ui.startBtn.addEventListener("click", () => startCamera());
+      ui.switchBtn.addEventListener("click", switchCamera);
+      ui.stopBtn.addEventListener("click", () => {
+        stopStream();
+        setMessage("相機已停止。");
       });
-    });
+      ui.snapBtn.addEventListener("click", takeSnapshot);
+      ui.clearBtn.addEventListener("click", clearSnapshots);
+
+      ui.preview.addEventListener("loadedmetadata", updateResolutionLabel);
+
+      window.addEventListener("beforeunload", () => stopStream({ silent: true }));
+
+      updateSwitchLabel();
+      syncControls();
+    })();
   </script>
 </body>
 </html>
